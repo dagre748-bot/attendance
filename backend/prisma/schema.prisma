@@ -1,0 +1,83 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   // 'STUDENT' or 'TEACHER'
+  classId   String?  // If student, assigned to a class
+  createdAt DateTime @default(now())
+
+  // Relations
+  taughtClasses      Class[]            @relation("TeacherClasses")
+  studentClass       Class?             @relation("StudentClass", fields: [classId], references: [id])
+  attendanceRecords  AttendanceRecord[]
+  notifications      Notification[]
+}
+
+model Class {
+  id        String   @id @default(uuid())
+  name      String
+  teacherId String
+
+  teacher   User      @relation("TeacherClasses", fields: [teacherId], references: [id])
+  students  User[]    @relation("StudentClass")
+  subjects  Subject[]
+  schedules Schedule[]
+  attendanceRecords AttendanceRecord[]
+}
+
+model Subject {
+  id        String   @id @default(uuid())
+  name      String
+  classId   String
+
+  class     Class      @relation(fields: [classId], references: [id])
+  schedules Schedule[]
+  attendanceRecords AttendanceRecord[]
+}
+
+model Schedule {
+  id        String   @id @default(uuid())
+  classId   String
+  subjectId String
+  date      DateTime
+  time      String
+
+  class     Class    @relation(fields: [classId], references: [id])
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+}
+
+model AttendanceRecord {
+  id        String   @id @default(uuid())
+  studentId String
+  classId   String
+  subjectId String
+  date      DateTime
+  status    String   // 'PRESENT' | 'ABSENT'
+
+  student   User     @relation(fields: [studentId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  
+  @@unique([studentId, classId, subjectId, date])
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  userId     String
+  message    String
+  type       String
+  readStatus Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}
