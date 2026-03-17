@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../lib/api';
 import { UserCircle, Lock, Mail, BookOpen } from 'lucide-react';
@@ -14,7 +14,20 @@ const Register = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   
+  const [classes, setClasses] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const res = await api.get('/class/public/list');
+        setClasses(res.data);
+      } catch (err) {
+        console.error('Failed to fetch classes', err);
+      }
+    };
+    fetchClasses();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,12 +109,23 @@ const Register = () => {
 
           {role === 'STUDENT' && (
             <div className="input-group">
-              <label>Class Title / ID (Optional - For mapping)</label>
+              <label>Select Your Class</label>
               <div style={{ position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
                   <BookOpen size={20} />
                 </div>
-                <input type="text" className="input-field" style={{ width: '100%', paddingLeft: '2.75rem' }} value={classId} onChange={(e) => setClassId(e.target.value)} />
+                <select 
+                  className="input-field" 
+                  style={{ width: '100%', paddingLeft: '2.75rem' }} 
+                  value={classId} 
+                  onChange={(e) => setClassId(e.target.value)}
+                  required={role === 'STUDENT'}
+                >
+                  <option value="">-- Choose Your Class --</option>
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.id}>{cls.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           )}
