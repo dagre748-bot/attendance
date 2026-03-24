@@ -119,3 +119,19 @@ export const getStudents = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: 'Error fetching students' });
     }
 }
+
+export const getAllClassesPublic = async (req: any, res: Response) => {
+  try {
+    const classes = await prisma.class.findMany({
+      select: {
+        id: true,
+        name: true
+      }
+    });
+
+    res.json(classes);
+  } catch (error) {
+    console.error('Error fetching all classes:', error);
+    res.status(500).json({ message: 'Error fetching classes' });
+  }
+};
