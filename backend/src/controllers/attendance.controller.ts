@@ -93,7 +93,7 @@ export const markAttendance = async (req: AuthRequest, res: Response) => {
         status: 'PRESENT'
       },
       include: {
-        student: { select: { name: true, email: true } },
+        student: { select: { id: true, name: true, email: true } },
         subject: { select: { name: true } }
       }
     });

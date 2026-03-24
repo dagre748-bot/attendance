@@ -101,7 +101,7 @@ const Sidebar = () => {
                onClick={closeSidebar}
              >
                <ScanLine size={20} />
-               <span>Scan</span>
+               <span>Scan QRs</span>
              </NavLink>
           )}
 
