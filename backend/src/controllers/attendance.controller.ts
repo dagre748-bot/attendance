@@ -217,9 +217,10 @@ export const getClassAttendance = async (req: AuthRequest, res: Response) => {
         startDate = new Date(Date.now() - 36 * 60 * 60 * 1000); // Past 36h
     }
 
+    console.log(`Backend Request: Searching for scans of Subject ${subjectId} starting from ${startDate.toISOString()}`);
+
     const records = await prisma.attendanceRecord.findMany({
       where: {
-        classId: String(classId),
         subjectId: String(subjectId),
         date: {
           gte: startDate

@@ -104,8 +104,19 @@ const TeacherDashboard = () => {
 
   useEffect(() => {
     if (selectedClassId && selectedSubjectIdForAtt) {
+      setAttendanceRecords([]); // Clear old list while loading
       fetchAttendance(selectedClassId, selectedSubjectIdForAtt);
     }
+  }, [selectedClassId, selectedSubjectIdForAtt, fetchAttendance]);
+
+  // Fallback Polling (Every 15 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (selectedClassId && selectedSubjectIdForAtt) {
+        fetchAttendance(selectedClassId, selectedSubjectIdForAtt);
+      }
+    }, 15000);
+    return () => clearInterval(interval);
   }, [selectedClassId, selectedSubjectIdForAtt, fetchAttendance]);
 
   // Socket listener for real-time updates
