@@ -12,9 +12,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
 export const generateQR = async (req: AuthRequest, res: Response) => {
   try {
     const studentId = req.user?.userId;
-    const classId = req.user?.classId;
 
-    if (!studentId || !classId) {
+    if (!studentId) {
       return res.status(400).json({ message: 'Invalid student data' });
     }
 
@@ -25,7 +24,6 @@ export const generateQR = async (req: AuthRequest, res: Response) => {
 
     const payload = {
       studentId,
-      classId,
       timestamp: Date.now()
     };
 
@@ -35,7 +33,7 @@ export const generateQR = async (req: AuthRequest, res: Response) => {
     res.json({
       qrToken,
       studentName: student?.name,
-      className: student?.studentClass?.name
+      className: student?.studentClass?.name || 'Unassigned'
     });
   } catch (error) {
     console.error('Error generating QR:', error);
@@ -47,7 +45,6 @@ export const generateQR = async (req: AuthRequest, res: Response) => {
 export const markAttendance = async (req: AuthRequest, res: Response) => {
   try {
     const { qrToken, subjectId } = req.body;
-    const teacherId = req.user?.userId;
 
     if (!qrToken || !subjectId) {
       return res.status(400).json({ message: 'QR Token and Subject ID are required' });
@@ -61,7 +58,17 @@ export const markAttendance = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'Invalid or expired QR code' });
     }
 
-    const { studentId, classId } = decodedRef;
+    const { studentId } = decodedRef;
+    if (!studentId) {
+      return res.status(400).json({ message: 'Invalid QR payload' });
+    }
+
+    // Derive classId from the scanned subject
+    const subject = await prisma.subject.findUnique({ where: { id: subjectId } });
+    if (!subject) {
+      return res.status(404).json({ message: 'Subject not found' });
+    }
+    const classId = subject.classId;
 
     // Check if attendance already marked for the day
     const today = new Date();

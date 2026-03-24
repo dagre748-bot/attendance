@@ -10,16 +10,16 @@ const QRGenerator = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchToken = async () => {
+    const fetchToken = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await api.get('/attendance/generate-qr');
       setToken(res.data.qrToken);
       setStudentName(res.data.studentName);
-      setClassName(res.data.className);
+      setClassName(res.data.className || 'No Class Assigned');
     } catch (err: any) {
-      setError('Failed to generate permanent QR token. Make sure you are assigned to a class.');
+      setError('Failed to generate permanent QR token.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -48,10 +48,10 @@ const QRGenerator = () => {
         <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Your Attendance QR</h1>
         <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>Show this to your teacher to get marked.</p>
 
-        {studentName && className && (
+        {studentName && (
           <div style={{ marginBottom: '2rem', background: 'var(--bg-primary)', padding: '1rem', borderRadius: '0.5rem' }}>
             <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{studentName}</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{className}</p>
+            {className && <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{className}</p>}
           </div>
         )}
 
