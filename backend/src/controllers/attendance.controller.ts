@@ -111,6 +111,9 @@ export const markAttendance = async (req: AuthRequest, res: Response) => {
       attendance
     });
 
+    // Notify teacher dashboard (broadcast to everyone interested in this class/subject)
+    io.emit('attendance_updated', { classId, subjectId });
+
     // Create notification record
     await prisma.notification.create({
       data: {
@@ -147,23 +150,25 @@ export const manualAttendance = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    let attendance;
     if (existingAttendance) {
-      const updated = await prisma.attendanceRecord.update({
+      attendance = await prisma.attendanceRecord.update({
         where: { id: existingAttendance.id },
         data: { status }
       });
-      return res.json({ message: 'Attendance updated', attendance: updated });
+    } else {
+      attendance = await prisma.attendanceRecord.create({
+        data: {
+          studentId,
+          classId,
+          subjectId,
+          date: new Date(),
+          status
+        }
+      });
     }
 
-    const attendance = await prisma.attendanceRecord.create({
-      data: {
-        studentId,
-        classId,
-        subjectId,
-        date: new Date(),
-        status
-      }
-    });
+    io.emit('attendance_updated', { classId, subjectId });
 
     res.status(200).json({ message: 'Attendance recorded successfully', attendance });
   } catch (error) {

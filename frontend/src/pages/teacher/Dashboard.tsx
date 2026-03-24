@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../lib/api';
 import { Users, BookOpen, Plus, Download, UserCheck, X } from 'lucide-react';
 import { format } from 'date-fns';
+import socket from '../../lib/socket';
 
 interface Class {
   id: string;
@@ -27,8 +28,6 @@ interface AttendanceRecord {
   status: string;
 }
 
-
-
 const TeacherDashboard = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -43,6 +42,29 @@ const TeacherDashboard = () => {
 
   const [selectedSubjectIdForAtt, setSelectedSubjectIdForAtt] = useState('');
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+
+  // Socket listener for real-time updates
+  useEffect(() => {
+    socket.connect();
+    
+    const handleUpdate = (data: { classId: string; subjectId: string }) => {
+      // Check if the update is relevant to the currently viewed class/subject
+      if (data.classId === selectedClassId && data.subjectId === setSelectedSubjectIdForAtt as any) {
+         // Note: We need to use the actual state values in the closure or use a ref
+      }
+      // Simplest way: always trigger a refresh if we are on the dashboard
+      if (selectedClassId && selectedSubjectIdForAtt) {
+        fetchAttendance(selectedClassId as any, selectedSubjectIdForAtt as any);
+      }
+    };
+
+    socket.on('attendance_updated', handleUpdate);
+
+    return () => {
+      socket.off('attendance_updated', handleUpdate);
+      socket.disconnect();
+    };
+  }, [selectedClassId, selectedSubjectIdForAtt]);
 
   const fetchClasses = useCallback(async () => {
     try {
