@@ -84,7 +84,7 @@ const TeacherDashboard = () => {
     try {
       // Get today's date in YYYY-MM-DD format for consistency
       const today = format(new Date(), 'yyyy-MM-dd');
-      const res = await api.get(`/attendance/class?classId=${classId}&subjectId=${subjectId}&date=${today}`);
+      const res = await api.get(`/attendance/class-history?classId=${classId}&subjectId=${subjectId}&date=${today}`);
       setAttendanceRecords(res.data);
     } catch (error) {
       console.error('Error fetching attendance', error);
