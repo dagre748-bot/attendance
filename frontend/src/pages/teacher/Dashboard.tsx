@@ -276,7 +276,59 @@ const TeacherDashboard = () => {
                     </div>
                   </div>
                 );
-              }) : <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No students found.</p>}
+              }) : <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No students found in this class.</p>}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Attendance History Table (Moving from student to teacher) */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="glass-panel" style={{ flex: 1, overflowY: 'auto' }}>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Download size={20} /> Today's Attendance Summary
+            </h2>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                    <th style={{ padding: '1rem', fontWeight: 600 }}>Student Name</th>
+                    <th style={{ padding: '1rem', fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: '1rem', fontWeight: 600 }}>Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendanceRecords.length > 0 ? (
+                    attendanceRecords.map((record: any) => (
+                      <tr key={record.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '1rem', fontWeight: 500 }}>
+                          {record.student?.name || 'Unknown Student'}
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          <span style={{ 
+                            fontSize: '0.75rem', 
+                            padding: '0.25rem 0.5rem', 
+                            borderRadius: '1rem',
+                            fontWeight: 600,
+                            background: record.status === 'PRESENT' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            color: record.status === 'PRESENT' ? 'var(--accent-secondary)' : 'var(--danger)'
+                          }}>
+                            {record.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                           {new Date(record.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                        No records for this subject today.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
