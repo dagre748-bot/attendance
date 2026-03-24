@@ -43,28 +43,6 @@ const TeacherDashboard = () => {
   const [selectedSubjectIdForAtt, setSelectedSubjectIdForAtt] = useState('');
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
 
-  // Socket listener for real-time updates
-  useEffect(() => {
-    socket.connect();
-    
-    const handleUpdate = (data: { classId: string; subjectId: string }) => {
-      // Check if the update is relevant to the currently viewed class/subject
-      if (data.classId === selectedClassId && data.subjectId === setSelectedSubjectIdForAtt as any) {
-         // Note: We need to use the actual state values in the closure or use a ref
-      }
-      // Simplest way: always trigger a refresh if we are on the dashboard
-      if (selectedClassId && selectedSubjectIdForAtt) {
-        fetchAttendance(selectedClassId as any, selectedSubjectIdForAtt as any);
-      }
-    };
-
-    socket.on('attendance_updated', handleUpdate);
-
-    return () => {
-      socket.off('attendance_updated', handleUpdate);
-      socket.disconnect();
-    };
-  }, [selectedClassId, selectedSubjectIdForAtt]);
 
   const fetchClasses = useCallback(async () => {
     try {
@@ -104,8 +82,9 @@ const TeacherDashboard = () => {
   const fetchAttendance = useCallback(async (classId: string, subjectId: string) => {
     if (!classId || !subjectId) return;
     try {
-      // Fetch today's attendance for the selected class and subject
-      const res = await api.get(`/attendance/class?classId=${classId}&subjectId=${subjectId}`);
+      // Get today's date in YYYY-MM-DD format for consistency
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const res = await api.get(`/attendance/class?classId=${classId}&subjectId=${subjectId}&date=${today}`);
       setAttendanceRecords(res.data);
     } catch (error) {
       console.error('Error fetching attendance', error);
@@ -128,6 +107,35 @@ const TeacherDashboard = () => {
       fetchAttendance(selectedClassId, selectedSubjectIdForAtt);
     }
   }, [selectedClassId, selectedSubjectIdForAtt, fetchAttendance]);
+
+  // Socket listener for real-time updates
+  useEffect(() => {
+    socket.connect();
+    
+    const handleUpdate = () => {
+      // Re-fetch attendance and students to be safe whenever any update occurs
+      if (selectedClassId && selectedSubjectIdForAtt) {
+        fetchAttendance(selectedClassId, selectedSubjectIdForAtt);
+      }
+    };
+
+    socket.on('attendance_updated', handleUpdate);
+
+    return () => {
+      socket.off('attendance_updated', handleUpdate);
+      socket.disconnect();
+    };
+  }, [selectedClassId, selectedSubjectIdForAtt, fetchAttendance]);
+
+  const handleManualRefresh = () => {
+    if (selectedClassId) {
+       fetchSubjects(selectedClassId);
+       fetchStudents(selectedClassId);
+       if (selectedSubjectIdForAtt) {
+         fetchAttendance(selectedClassId, selectedSubjectIdForAtt);
+       }
+    }
+  };
 
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,6 +219,9 @@ const TeacherDashboard = () => {
           <p>Manage your classes, subjects, and attendance</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
+          <button onClick={handleManualRefresh} className="btn btn-secondary">
+             Refresh Data
+          </button>
           <button onClick={() => setShowScheduleModal(true)} className="btn btn-primary">
             <Plus size={18} /> New Schedule
           </button>
