@@ -261,31 +261,32 @@ export const exportExcel = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Class or Subject not found' });
     }
 
-    // 2. Fetch all students in this class
+    // 2. Fetch ALL registered students (Global Model)
     const students = await prisma.user.findMany({
       where: {
-        classId: String(classId),
         role: 'STUDENT'
       },
       select: {
         id: true,
         name: true,
         email: true
-      }
+      },
+      orderBy: { name: 'asc' }
     });
 
     if (students.length === 0) {
-      return res.status(404).json({ message: 'No students found for this class' });
+      return res.status(404).json({ message: 'No students found in the system' });
     }
 
-    // 3. Fetch attendance records for today
+    // 3. Fetch attendance records for this subject (flexible window)
+    const startDate = new Date(queryDate.getTime() - 12 * 60 * 60 * 1000); // 12h before start of day
+    
     const records = await prisma.attendanceRecord.findMany({
       where: {
-        classId: String(classId),
         subjectId: String(subjectId),
         date: {
-          gte: queryDate,
-          lt: new Date(queryDate.getTime() + 24 * 60 * 60 * 1000)
+          gte: startDate,
+          lt: new Date(startDate.getTime() + 48 * 60 * 60 * 1000)
         }
       }
     });
@@ -302,8 +303,8 @@ export const exportExcel = async (req: AuthRequest, res: Response) => {
         'Email': student.email,
         'Class': classData.name,
         'Subject': subjectData.name,
-        'Date': format(queryDate, 'yyyy-MM-dd'),
-        'Status': record ? record.status : 'NOT MARKED' // Show ALL students
+        'Date': record ? format(new Date(record.date), 'yyyy-MM-dd HH:mm') : format(queryDate, 'yyyy-MM-dd'),
+        'Status': record ? record.status : 'ABSENT'
       };
     });
 

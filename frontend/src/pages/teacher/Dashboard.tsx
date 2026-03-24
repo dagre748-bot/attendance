@@ -174,14 +174,37 @@ const TeacherDashboard = () => {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!selectedClassId || !selectedSubjectIdForAtt) {
       alert('Please select a class and subject to export.');
       return;
     }
-    const baseUrl = import.meta.env.VITE_API_URL || '';
-    const exportUrl = `${baseUrl}/attendance/export?classId=${selectedClassId}&subjectId=${selectedSubjectIdForAtt}`;
-    window.open(exportUrl, '_blank');
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const subjectName = subjects.find(s => s.id === selectedSubjectIdForAtt)?.name || 'Subject';
+      
+      const response = await api.get('/attendance/export', {
+        params: { 
+          classId: selectedClassId, 
+          subjectId: selectedSubjectIdForAtt,
+          date: today
+        },
+        responseType: 'blob'
+      });
+
+      // Create a link and trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Attendance_${subjectName}_${today}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting Excel', error);
+      alert('Failed to export Excel report. Please try again.');
+    }
   };
 
   const handleCreateSchedule = async (e: React.FormEvent) => {
