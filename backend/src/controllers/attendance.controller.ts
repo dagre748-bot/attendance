@@ -203,24 +203,36 @@ export const getClassAttendance = async (req: AuthRequest, res: Response) => {
   try {
     const { classId, subjectId, date } = req.query;
 
-    let queryDate = new Date();
+    // To handle timezone issues (especially around midnight in India), 
+    // we fetch records from the last 24 hours if no specific date is provided,
+    // or we fetch the entire calendar day if a date IS provided.
+    let dateFilter: any;
+    
     if (date) {
-      queryDate = new Date(date as string);
+      const start = new Date(date as string);
+      start.setHours(0, 0, 0, 0);
+      // Extend window slightly to handle potential offsets
+      dateFilter = {
+        gte: new Date(start.getTime() - 12 * 60 * 60 * 1000), 
+        lt: new Date(start.getTime() + 36 * 60 * 60 * 1000)
+      };
+    } else {
+      // Default: Last 24 hours
+      dateFilter = {
+        gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+      };
     }
-    queryDate.setHours(0, 0, 0, 0);
 
     const records = await prisma.attendanceRecord.findMany({
       where: {
         classId: String(classId),
         subjectId: String(subjectId),
-        date: {
-          gte: queryDate,
-          lt: new Date(queryDate.getTime() + 24 * 60 * 60 * 1000)
-        }
+        date: dateFilter
       },
       include: {
         student: { select: { id: true, name: true, email: true } }
-      }
+      },
+      orderBy: { date: 'desc' }
     });
 
     res.json(records);
